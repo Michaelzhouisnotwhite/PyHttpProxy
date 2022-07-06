@@ -3,7 +3,7 @@ import copy
 
 
 class HttpParser:
-    http_stream = b""
+    http_stream = b""  # store http stream
     add_count = 0
     content_length = None
     header_pos = 0
@@ -21,6 +21,11 @@ class HttpParser:
         pass
 
     def get_header(self, pop=True):
+        """
+        get header from stream
+        :param pop: if True: get and delete the header part
+        :return: header part
+        """
         if self.header_pos > 0:
             return self.http_stream[:self.header_pos]
         if pop:
@@ -34,6 +39,10 @@ class HttpParser:
         raise self.HeaderError
 
     def check_end(self):
+        """
+        check if the http has ending EOF
+        :return: Ture or False
+        """
         if self.content_length >= 0:
             if self.add_count >= self.content_length + self.header_pos:
                 return True
@@ -49,6 +58,11 @@ class HttpParser:
                 return False
 
     def add_bytes(self, data: bytes):
+        """
+        add bytes to http stream buffer
+        :param data: bytes
+        :return: if the data has http EOF
+        """
         self.http_stream += data
         self.add_count += len(data)
         if self.header_pos == 0:
@@ -58,7 +72,7 @@ class HttpParser:
             if len(by_double_enter) > 1:  # found header EOF
                 self.header_pos = len(by_double_enter[0]) + len(b"\r\n\r\n")
 
-            self.parse_http_stream()
+            self._parse_http_stream()
             # if self.host is None or self.connection is None or self.content_length is None:
             #     raise self.HeaderError
 
@@ -77,6 +91,10 @@ class HttpParser:
                 return False
 
     def clear(self):
+        """
+        clear the http streams
+        :return: None
+        """
         self.http_stream = b""
         self.content_length = None
         self.header_pos = 0
@@ -86,9 +104,17 @@ class HttpParser:
         self.header_popped = False
 
     def clear_stream(self):
+        """
+        clear http stream
+        :return: None
+        """
         self.http_stream = b""
 
-    def parse_http_stream(self) -> None:
+    def _parse_http_stream(self) -> None:
+        """
+        parse the http header key: Content-Length, Host, Connection, Transfer-Encoding
+        :return: None
+        """
         header: bytes = b""
         res_list = self.http_stream.split(b"\r\n\r\n")
         if len(res_list) > 1:  # find header
@@ -134,11 +160,12 @@ class HttpParser:
         else:
             return
 
-    def is_http_end(stream: bytes):
-        by_double_enter = stream.split(b"\x30\x0d\x0a\x0d\x0a")
-        if len(by_double_enter) > 1:
-            if len(by_double_enter[-1]) == 0:
-                return True
 
-        else:
-            return False
+class HttpRequestStream(HttpParser):
+    def __init__(self):
+        super(HttpRequestStream, self).__init__()
+
+
+class HttpRespondStream(HttpParser):
+    def __init__(self):
+        super(HttpRespondStream, self).__init__()
