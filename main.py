@@ -3,7 +3,8 @@ from argparse import ArgumentParser
 
 def args():
     parser = ArgumentParser()
-    parser.add_argument("-p", "--port", required=False, default=8080, type=int, help="The port that the proxy server listen on.")
+    parser.add_argument("-p", "--port", required=False, default=8080, type=int,
+                        help="The port that the proxy server listen on.")
     return parser.parse_args()
 
 

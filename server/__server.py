@@ -1,14 +1,16 @@
-from queue import Queue
-import socket
 import errno
-from .__http_parser import HttpRequestStream, HttpRespondStream, HttpParser
+import os
+import signal
+import selectors
+import socket
 import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
-import selectors
+from queue import Queue
 
-from colorprt.default import success
-from colorprt.default import warn
+from colorprt.default import success, warn
+
+from .__http_parser import HttpParser, HttpRequestStream, HttpRespondStream
 
 RECV_BUFFER_LEN = 8120
 
@@ -19,7 +21,8 @@ class ProxyServer:
         self.port = port
 
         self.proxy_thread_pool = ThreadPoolExecutor()
-        self.proxy_log_thread_pool = ThreadPoolExecutor()
+        self.proxy_log_thread = threading.Thread(target=self.log_connections_action)
+        self.proxy_log_thread.daemon = True
 
         self.connections_queue = Queue(-1)
         self.request_logs = Queue(100)
@@ -46,23 +49,28 @@ class ProxyServer:
             print('could not open socket')
             sys.exit(1)
 
-        self.proxy_log_thread_pool.submit(self.log_connections_action)
+        self.proxy_sock.setblocking(False)
+        self.proxy_log_thread.start()
         success("server started on port: %d.." % self.port)
 
     def start(self):
         try:
             self.__loop()
-
+            
         except KeyboardInterrupt:
-            self.proxy_log_thread_pool.shutdown()
-            self.proxy_thread_pool.shutdown()
-
+            self.proxy_thread_pool.shutdown(wait=False, cancel_futures=True)
+            # while self.proxy_log_thread.is_alive():
+            #     self.proxy_log_thread.join(timeout=1)
+            
     def log_connections_action(self):
-        while True:
-            if not self.connections_queue.empty():
-                host_name, port = self.connections_queue.get()
-                print("client: {}:{}".format(host_name, port))
-                self.connections_queue.task_done()
+        try:
+            while True:
+                if not self.connections_queue.empty():
+                    host_name, port = self.connections_queue.get()
+                    print("client: {}:{}".format(host_name, port))
+                    self.connections_queue.task_done()
+        except KeyboardInterrupt:
+            return
 
     def __loop(self):
         """
@@ -73,9 +81,15 @@ class ProxyServer:
             try:
                 client_sock, addr = self.proxy_sock.accept()
             except OSError as oe:
-                continue
+                if oe.errno == errno.EWOULDBLOCK:
+                    continue
+                else:
+                    break
             self.connections_queue.put(addr)
             self.proxy_thread_pool.submit(ProxyRequest(client_sock).run)
+        # pid = os.getpid()
+        # os.kill(pid)
+        raise KeyboardInterrupt
 
 
 class ProxyRequest(object):
@@ -94,6 +108,7 @@ class ProxyRequest(object):
         self.selector = selectors.DefaultSelector()
 
         self.sub_server_thread = threading.Thread(target=self.server_thread)
+        self.sub_server_thread.daemon = True
 
     def run(self) -> None:
         """
