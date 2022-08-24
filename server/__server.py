@@ -1,6 +1,4 @@
 import errno
-import os
-import signal
 import selectors
 import socket
 import sys
@@ -56,12 +54,12 @@ class ProxyServer:
     def start(self):
         try:
             self.__loop()
-            
+
         except KeyboardInterrupt:
             self.proxy_thread_pool.shutdown(wait=False, cancel_futures=True)
             # while self.proxy_log_thread.is_alive():
             #     self.proxy_log_thread.join(timeout=1)
-            
+
     def log_connections_action(self):
         try:
             while True:
