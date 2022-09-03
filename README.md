@@ -21,5 +21,5 @@ from server import ProxyServer
 ProxyServer(port=1080).start()
 ```
 
-**NOTE:** if anyone can make this project available for Https request, I will be very appreciate.
+**NOTE:** if anyone can make this project available for Https request, I would be very appreciate.
 
