@@ -8,7 +8,7 @@ from queue import Queue
 
 from colorprt.default import success, warn
 
-from .__http_parser import HttpParser, HttpRequestStream, HttpRespondStream
+from ._http_parser import HttpParser, HttpRequestStream, HttpRespondStream
 
 RECV_BUFFER_LEN = 8120
 

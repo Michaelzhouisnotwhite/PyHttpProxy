@@ -1,1 +1,1 @@
-from .__server import ProxyServer
+from ._server import ProxyServer

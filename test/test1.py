@@ -1,4 +1,4 @@
-from server.__server import *
+from server._server import *
 
 
 def main():
