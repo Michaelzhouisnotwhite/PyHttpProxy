@@ -6,7 +6,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from queue import Queue
 
-from colorprt.default import success, warn
+from colorprt.default import success_color, warn_color
 
 from ._http_parser import HttpParser, HttpRequestStream, HttpRespondStream
 
@@ -50,7 +50,7 @@ class ProxyServer:
 
         self.proxy_sock.setblocking(False)
         self.proxy_log_thread.start()
-        success("server started on port: %d.." % self.port)
+        success_color.print("server started on port: %d.." % self.port)
 
     def start(self):
         try:
@@ -156,7 +156,7 @@ class ProxyRequest(object):
             try:
                 data = self.server_sock.recv(RECV_BUFFER_LEN)
             except OSError as os:
-                warn(os)
+                warn_color.print(os)
                 return True
             add_res = self.respond_stream.add_bytes(data)
 
